@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { Chapter } from '@/lib/types';
 import MarkdownView from '@/components/ui/MarkdownView';
 import ImagePicker from '@/components/ui/ImagePicker';
+import ImageLightboxModal from '@/components/ui/ImageLightboxModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
@@ -23,6 +24,7 @@ import {
   Eye,
   Edit3,
   Image as ImageIcon,
+  ZoomIn,
 } from 'lucide-react';
 
 interface ChapterEditorProps {
@@ -35,6 +37,12 @@ export default function ChapterEditor({ chapters, onChange }: ChapterEditorProps
   const [previewModes, setPreviewModes] = useState<Record<number, boolean>>({});
   // Track image picker toggle per chapter index
   const [showImagePickers, setShowImagePickers] = useState<Record<number, boolean>>({});
+  const [lightboxData, setLightboxData] = useState<{
+    src: string;
+    alt: string;
+    caption?: string;
+    figureLabel?: string;
+  } | null>(null);
   const textareaRefs = useRef<Record<number, HTMLTextAreaElement | null>>({});
 
   const togglePreview = (idx: number) => {
@@ -53,6 +61,7 @@ export default function ChapterEditor({ chapters, onChange }: ChapterEditorProps
         orderIndex: nextIndex,
         chapterTitle: `Chapter ${nextIndex}`,
         imageUrl: '',
+        imageCaption: '',
         content: '',
       },
     ]);
@@ -228,13 +237,31 @@ export default function ChapterEditor({ chapters, onChange }: ChapterEditorProps
 
                 {/* Chapter Image Picker Drawer */}
                 {isImagePickerOpen && (
-                  <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-lg">
+                  <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-lg space-y-3">
                     <ImagePicker
                       label="Chapter Context Image"
                       value={chapter.imageUrl}
                       onChange={(url) => updateChapterField(idx, 'imageUrl', url)}
                       helperText="Attach an operational illustration, tactical map, or artifact visual for this chapter."
                     />
+                    {chapter.imageUrl && (
+                      <div className="pt-2 border-t border-zinc-800">
+                        <label className="block text-[11px] font-mono text-zinc-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+                          <span>FIGURE CAPTION // WIKIPEDIA-STYLE DESCRIPTION</span>
+                          <span className="text-[10px] text-zinc-500 font-mono">[OPTIONAL CAPTION]</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Subterranean bastion seawall prior to rupture during the midsummer eclipse."
+                          value={chapter.imageCaption || ''}
+                          onChange={(e) => updateChapterField(idx, 'imageCaption', e.target.value)}
+                          className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-1.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-red-500 font-mono"
+                        />
+                        <p className="text-[10px] text-zinc-500 font-mono mt-1">
+                          Appears in a dedicated side container beneath the image with figure designation, matching Wikipedia document standards.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -357,13 +384,36 @@ export default function ChapterEditor({ chapters, onChange }: ChapterEditorProps
                 {isPreview ? (
                   <div className="min-h-[140px] p-4 rounded-lg bg-zinc-900 border border-zinc-800 overflow-y-auto space-y-3">
                     {chapter.imageUrl && (
-                      <div className="rounded-lg overflow-hidden max-h-56 border border-zinc-800">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={chapter.imageUrl}
-                          alt={chapter.chapterTitle}
-                          className="w-full h-auto max-h-56 object-cover"
-                        />
+                      <div className="sm:float-right sm:w-72 sm:ml-4 sm:mb-2 bg-zinc-950 border border-zinc-800 rounded p-2 text-left clear-both shadow-md">
+                        <div
+                          onClick={() =>
+                            setLightboxData({
+                              src: chapter.imageUrl!,
+                              alt: chapter.chapterTitle,
+                              caption: chapter.imageCaption || chapter.chapterTitle,
+                              figureLabel: `FIG // ${idx + 1 < 10 ? `0${idx + 1}` : idx + 1}`,
+                            })
+                          }
+                          className="rounded overflow-hidden border border-zinc-800/80 bg-zinc-950 relative cursor-pointer group/prev"
+                          title="Click to Enlarge Visual"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={chapter.imageUrl}
+                            alt={chapter.chapterTitle}
+                            className="w-full h-auto object-cover max-h-48 group-hover/prev:scale-105 transition-transform"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/prev:opacity-100 transition-opacity flex items-center justify-center">
+                            <span className="px-2 py-0.5 rounded bg-black/90 border border-zinc-600 text-white text-[9px] hud-mono flex items-center gap-1 shadow-md">
+                              <ZoomIn className="w-2.5 h-2.5 text-red-400" />
+                              <span>ENLARGE</span>
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-1.5 text-[11px] font-mono text-zinc-400 leading-snug">
+                          <span className="text-red-500 font-bold mr-1">FIG // {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}:</span>
+                          {chapter.imageCaption || chapter.chapterTitle}
+                        </div>
                       </div>
                     )}
                     {chapter.content ? (
@@ -373,6 +423,7 @@ export default function ChapterEditor({ chapters, onChange }: ChapterEditorProps
                         // NO CONTENT TO PREVIEW
                       </p>
                     )}
+                    <div className="clear-both" />
                   </div>
                 ) : (
                   <textarea
@@ -392,6 +443,17 @@ export default function ChapterEditor({ chapters, onChange }: ChapterEditorProps
           })}
         </AnimatePresence>
       </div>
+
+      {/* Chapter Image Lightbox Modal */}
+      {lightboxData && (
+        <ImageLightboxModal
+          src={lightboxData.src}
+          alt={lightboxData.alt}
+          caption={lightboxData.caption}
+          figureLabel={lightboxData.figureLabel}
+          onClose={() => setLightboxData(null)}
+        />
+      )}
     </div>
   );
 }

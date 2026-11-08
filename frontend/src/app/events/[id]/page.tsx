@@ -7,7 +7,9 @@ import { fetchEventById, deleteEvent } from '@/lib/api';
 import { HistoricalEvent } from '@/lib/types';
 import { formatEventDate } from '@/lib/dateUtils';
 import MarkdownView from '@/components/ui/MarkdownView';
-import { ArrowLeft, Calendar, MapPin, Trash2, Edit, FileText, ShieldAlert } from 'lucide-react';
+import EventTableOfContents from '@/components/events/EventTableOfContents';
+import ImageLightboxModal from '@/components/ui/ImageLightboxModal';
+import { ArrowLeft, Calendar, MapPin, Trash2, Edit, FileText, ShieldAlert, ZoomIn } from 'lucide-react';
 
 export default function EventDetailPage() {
   const params = useParams();
@@ -17,6 +19,12 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<HistoricalEvent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lightboxData, setLightboxData] = useState<{
+    src: string;
+    alt: string;
+    caption?: string;
+    figureLabel?: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -107,16 +115,30 @@ export default function EventDetailPage() {
       {/* Dossier Header & Visual Intel */}
       <header className="bg-zinc-950/90 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl">
         {event.imageUrl && (
-          <div className="relative w-full h-64 sm:h-80 overflow-hidden bg-black border-b border-zinc-800">
+          <div
+            onClick={() =>
+              setLightboxData({
+                src: event.imageUrl!,
+                alt: event.title,
+                caption: event.synopsis || event.title,
+                figureLabel: 'PRIMARY VISUAL INTEL',
+              })
+            }
+            className="relative w-full h-64 sm:h-80 overflow-hidden bg-black border-b border-zinc-800 cursor-pointer group"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={event.imageUrl}
               alt={event.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent" />
             <div className="absolute top-3 left-3 px-2 py-0.5 bg-black/80 border border-zinc-700 rounded text-[10px] hud-mono text-zinc-300">
               PRIMARY VISUAL INTEL
+            </div>
+            <div className="absolute bottom-3 right-3 px-2 py-1 rounded bg-black/80 border border-zinc-700 text-zinc-300 text-[10px] hud-mono flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ZoomIn className="w-3 h-3 text-red-400" />
+              <span>CLICK TO ENLARGE</span>
             </div>
           </div>
         )}
@@ -128,11 +150,17 @@ export default function EventDetailPage() {
               <Calendar className="w-3.5 h-3.5 text-red-400" />
               <span>{formattedDate}</span>
             </span>
-            {event.location && (
+            {event.location ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs hud-mono">
                 <MapPin className="w-3 h-3 text-emerald-400" />
                 <span className="text-zinc-500">SECTOR //</span>
                 <span className="font-medium text-zinc-200">{event.location.name}</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-900/60 border border-zinc-800 text-zinc-400 text-xs hud-mono">
+                <MapPin className="w-3 h-3 text-zinc-600" />
+                <span className="text-zinc-600">SECTOR //</span>
+                <span className="font-mono text-zinc-400">[UNKNOWN]</span>
               </span>
             )}
           </div>
@@ -143,7 +171,7 @@ export default function EventDetailPage() {
 
           {/* Synopsis */}
           {event.synopsis && (
-            <div className="border border-zinc-800 bg-zinc-900/40 p-4 rounded-lg space-y-1">
+            <div id="overview-synopsis" className="scroll-mt-24 border border-zinc-800 bg-zinc-900/40 p-4 rounded-lg space-y-1">
               <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 hud-mono">
                 PRIMARY BRIEFING // SYNOPSIS
               </div>
@@ -153,10 +181,11 @@ export default function EventDetailPage() {
             </div>
           )}
 
-          {event.factions && event.factions.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-800/80">
-              <span className="text-[11px] hud-mono uppercase tracking-wider text-zinc-500">FACTIONS INVOLVED //</span>
-              {event.factions.map((f) => (
+          {/* Factions or [UNKNOWN] */}
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-800/80">
+            <span className="text-[11px] hud-mono uppercase tracking-wider text-zinc-500">FACTIONS INVOLVED //</span>
+            {event.factions && event.factions.length > 0 ? (
+              event.factions.map((f) => (
                 <span
                   key={f.id}
                   className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-mono bg-zinc-900 border border-zinc-800 text-zinc-300"
@@ -167,37 +196,24 @@ export default function EventDetailPage() {
                   />
                   <span>{f.name}</span>
                 </span>
-              ))}
-            </div>
-          )}
+              ))
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-mono bg-zinc-900 border border-zinc-800/80 text-zinc-500">
+                <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
+                <span>[UNKNOWN]</span>
+              </span>
+            )}
+          </div>
         </div>
       </header>
 
-      {/* Chapters Quick Nav Table of Contents */}
-      {chapters.length > 1 && (
-        <nav className="p-4 rounded-xl bg-zinc-950/80 border border-zinc-800 space-y-2">
-          <div className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider hud-mono flex items-center gap-2">
-            <FileText className="w-3.5 h-3.5 text-red-400" />
-            <span>NARRATIVE LOG INDEX</span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-            {chapters.map((ch, idx) => (
-              <a
-                key={ch.id || idx}
-                href={`#chapter-${ch.orderIndex || idx + 1}`}
-                className="flex items-center gap-2 text-xs hud-mono text-zinc-300 hover:text-white transition-colors py-1.5 px-2.5 rounded bg-zinc-900/60 border border-zinc-800/60 hover:border-zinc-700"
-              >
-                <span className="w-5 h-5 rounded bg-zinc-800 text-zinc-300 flex items-center justify-center font-bold text-[10px]">
-                  {ch.orderIndex || idx + 1}
-                </span>
-                <span className="truncate">{ch.chapterTitle}</span>
-              </a>
-            ))}
-          </div>
-        </nav>
-      )}
+      {/* Wikipedia-Style Table of Contents */}
+      <EventTableOfContents
+        hasSynopsis={Boolean(event.synopsis)}
+        chapters={chapters}
+      />
 
-      {/* Chapters Reader with Context Visuals and Markdown */}
+      {/* Chapters Reader with Wikipedia-Style Side Visuals and Markdown */}
       <div className="space-y-6">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-zinc-400 hud-mono px-1">
           <FileText className="w-3.5 h-3.5 text-red-500" />
@@ -208,40 +224,87 @@ export default function EventDetailPage() {
           <section
             key={ch.id || idx}
             id={`chapter-${ch.orderIndex || idx + 1}`}
-            className="scroll-mt-24 bg-zinc-950/90 border border-zinc-800 rounded-xl overflow-hidden shadow-lg"
+            className="scroll-mt-24 bg-zinc-950/90 border border-zinc-800 rounded-xl overflow-hidden shadow-lg p-6 sm:p-8 space-y-4"
           >
-            {/* Chapter Context Image */}
-            {ch.imageUrl && (
-              <div className="relative w-full max-h-72 overflow-hidden bg-black border-b border-zinc-800">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={ch.imageUrl}
-                  alt={ch.chapterTitle}
-                  className="w-full h-auto max-h-72 object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent" />
-                <div className="absolute top-2.5 left-3 px-2 py-0.5 bg-black/80 border border-zinc-700 rounded text-[10px] hud-mono text-zinc-300">
-                  CONTEXT LOG VISUAL // CH-{idx + 1}
-                </div>
-              </div>
-            )}
+            {/* Chapter Header */}
+            <div className="flex items-center gap-3">
+              <span className="w-7 h-7 rounded bg-zinc-900 border border-zinc-700 text-red-400 text-xs font-bold hud-mono flex items-center justify-center shrink-0">
+                {ch.orderIndex || idx + 1}
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+                {ch.chapterTitle}
+              </h2>
+            </div>
 
-            <div className="p-6 sm:p-8 space-y-4">
-              <div className="flex items-center gap-3">
-                <span className="w-7 h-7 rounded bg-zinc-900 border border-zinc-700 text-red-400 text-xs font-bold hud-mono flex items-center justify-center shrink-0">
-                  {ch.orderIndex || idx + 1}
-                </span>
-                <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                  {ch.chapterTitle}
-                </h2>
-              </div>
-              <div className="border-t border-zinc-800/80 pt-4">
+            {/* Chapter Body with Wikipedia-Style Side Figure */}
+            <div className="border-t border-zinc-800/80 pt-4 relative">
+              {ch.imageUrl && (
+                <figure className="w-full sm:w-80 sm:float-right sm:ml-6 sm:mb-4 mb-4 bg-zinc-900/95 border border-zinc-800 rounded-lg p-2.5 shadow-xl select-none clear-both">
+                  {/* Thumbnail Image with Click-to-Enlarge Lightbox */}
+                  <div
+                    onClick={() =>
+                      setLightboxData({
+                        src: ch.imageUrl!,
+                        alt: ch.chapterTitle,
+                        caption: ch.imageCaption || ch.chapterTitle,
+                        figureLabel: `FIG // ${idx + 1 < 10 ? `0${idx + 1}` : idx + 1}`,
+                      })
+                    }
+                    className="rounded overflow-hidden border border-zinc-800 bg-black relative cursor-pointer group"
+                    title="Click to Enlarge Visual"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={ch.imageUrl}
+                      alt={ch.chapterTitle}
+                      className="w-full h-auto object-cover max-h-60 group-hover:scale-105 transition-transform duration-200"
+                    />
+                    <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/80 border border-zinc-700 rounded text-[9px] hud-mono text-zinc-300">
+                      FIG // {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
+                    </div>
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="px-2 py-1 rounded bg-black/90 border border-zinc-600 text-white text-[10px] hud-mono flex items-center gap-1 shadow-lg">
+                        <ZoomIn className="w-3 h-3 text-red-400" />
+                        <span>ENLARGE</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Dedicated Caption Below (Wikipedia style) */}
+                  <figcaption className="mt-2 text-xs font-mono text-zinc-300 leading-snug">
+                    <span className="text-red-400 font-bold mr-1.5">
+                      [FIG. {idx + 1}]:
+                    </span>
+                    {ch.imageCaption || ch.chapterTitle}
+                    <div className="text-[10px] text-zinc-500 font-mono mt-1 pt-1 border-t border-zinc-800/60 flex items-center justify-between">
+                      <span>INTELLIGENCE LOG VISUAL</span>
+                      <span>SEC // {idx + 1}.0</span>
+                    </div>
+                  </figcaption>
+                </figure>
+              )}
+
+              {/* Markdown Content wrapping around the figure */}
+              <div className="prose-container">
                 <MarkdownView content={ch.content} />
               </div>
+
+              {/* Clear float boundary */}
+              <div className="clear-both" />
             </div>
           </section>
         ))}
       </div>
+      {/* High-Resolution Tactical Image Lightbox Modal */}
+      {lightboxData && (
+        <ImageLightboxModal
+          src={lightboxData.src}
+          alt={lightboxData.alt}
+          caption={lightboxData.caption}
+          figureLabel={lightboxData.figureLabel}
+          onClose={() => setLightboxData(null)}
+        />
+      )}
     </article>
   );
 }

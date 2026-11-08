@@ -14,6 +14,7 @@ import {
 import { Chapter, Faction, Location } from '@/lib/types';
 import ChapterEditor from '@/components/events/ChapterEditor';
 import ImagePicker from '@/components/ui/ImagePicker';
+import TacticalDatePicker from '@/components/ui/TacticalDatePicker';
 import { ArrowLeft, Calendar, MapPin, Shield, Plus, Check, Edit } from 'lucide-react';
 
 export default function EditEventPage() {
@@ -155,6 +156,7 @@ export default function EditEventPage() {
           orderIndex: idx + 1,
           chapterTitle: ch.chapterTitle.trim(),
           imageUrl: ch.imageUrl?.trim() || undefined,
+          imageCaption: ch.imageCaption?.trim() || undefined,
           content: ch.content.trim(),
         })),
       });
@@ -253,16 +255,11 @@ export default function EditEventPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1 border-t border-zinc-800/80">
             {/* Gregorian Date */}
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 hud-mono mb-2 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-red-400" />
-                <span>CHRONOLOGICAL DATE (GREGORIAN) *</span>
-              </label>
-              <input
-                type="date"
-                required
+              <TacticalDatePicker
                 value={eventDate}
-                onChange={(e) => setEventDate(e.target.value)}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-zinc-100 text-xs sm:text-sm hud-mono focus:outline-none focus:border-red-500"
+                onChange={setEventDate}
+                required
+                label="CHRONOLOGICAL DATE (GREGORIAN)"
               />
             </div>
 
@@ -287,7 +284,7 @@ export default function EditEventPage() {
                 onChange={(e) => setLocationId(e.target.value)}
                 className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-zinc-100 text-xs sm:text-sm hud-mono focus:outline-none focus:border-red-500"
               >
-                <option value="">SELECT DESIGNATED SECTOR (OPTIONAL)</option>
+                <option value="">[UNKNOWN] (DEFAULT - UNASSIGNED SECTOR)</option>
                 {locations.map((loc) => (
                   <option key={loc.id} value={loc.id}>
                     {loc.name}
@@ -299,7 +296,7 @@ export default function EditEventPage() {
 
           {/* Affiliated Factions */}
           <div className="pt-1 border-t border-zinc-800/80">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-300 hud-mono flex items-center gap-1.5">
                 <Shield className="w-3.5 h-3.5 text-red-400" />
                 <span>AFFILIATED FACTIONS INVOLVED</span>
@@ -313,6 +310,9 @@ export default function EditEventPage() {
                 <span>NEW FACTION</span>
               </button>
             </div>
+            <p className="text-[10px] text-zinc-500 font-mono mb-2">
+              Select participating factions or leave unselected to default to [UNKNOWN].
+            </p>
 
             <div className="flex flex-wrap gap-2">
               {factions.length === 0 ? (

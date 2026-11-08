@@ -19,6 +19,7 @@ public class ChapterDto {
     private String chapterTitle;
 
     private String imageUrl;
+    private String imageCaption;
 
     @NotBlank(message = "Chapter content is required")
     private String content;
@@ -30,6 +31,7 @@ public class ChapterDto {
                 .orderIndex(chapter.getOrderIndex())
                 .chapterTitle(chapter.getChapterTitle())
                 .imageUrl(chapter.getImageUrl())
+                .imageCaption(chapter.getImageCaption())
                 .content(chapter.getContent())
                 .build();
     }

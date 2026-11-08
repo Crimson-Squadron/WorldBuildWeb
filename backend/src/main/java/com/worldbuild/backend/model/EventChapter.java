@@ -34,6 +34,9 @@ public class EventChapter {
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
+    @Column(name = "image_caption", columnDefinition = "TEXT")
+    private String imageCaption;
+
     @Column(columnDefinition = "LONGTEXT", nullable = false)
     private String content;
 

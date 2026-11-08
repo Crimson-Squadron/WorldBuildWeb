@@ -96,6 +96,7 @@ public class EventService {
                         .orderIndex(chapterDto.getOrderIndex() != null ? chapterDto.getOrderIndex() : index++)
                         .chapterTitle(chapterDto.getChapterTitle())
                         .imageUrl(chapterDto.getImageUrl())
+                        .imageCaption(chapterDto.getImageCaption())
                         .content(chapterDto.getContent())
                         .build();
                 chapters.add(chapter);
@@ -140,6 +141,7 @@ public class EventService {
                         .orderIndex(chapterDto.getOrderIndex() != null ? chapterDto.getOrderIndex() : index++)
                         .chapterTitle(chapterDto.getChapterTitle())
                         .imageUrl(chapterDto.getImageUrl())
+                        .imageCaption(chapterDto.getImageCaption())
                         .content(chapterDto.getContent())
                         .build();
                 event.getChapters().add(chapter);

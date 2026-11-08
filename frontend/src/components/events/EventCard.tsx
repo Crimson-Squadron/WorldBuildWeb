@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { HistoricalEvent } from '@/lib/types';
 import { formatEventDate } from '@/lib/dateUtils';
 import { motion, AnimatePresence } from 'framer-motion';
+import ImageLightboxModal from '@/components/ui/ImageLightboxModal';
 import {
   Calendar,
   MapPin,
@@ -14,6 +15,7 @@ import {
   Trash2,
   Edit,
   ArrowRight,
+  ZoomIn,
 } from 'lucide-react';
 
 interface EventCardProps {
@@ -23,6 +25,12 @@ interface EventCardProps {
 
 export default function EventCard({ event, onDelete }: EventCardProps) {
   const [showChaptersDropdown, setShowChaptersDropdown] = useState(false);
+  const [lightboxData, setLightboxData] = useState<{
+    src: string;
+    alt: string;
+    caption?: string;
+    figureLabel?: string;
+  } | null>(null);
 
   const chapters = event.chapters || [];
   const formattedDate = formatEventDate(event.eventDate);
@@ -31,16 +39,31 @@ export default function EventCard({ event, onDelete }: EventCardProps) {
     <article className="group bg-zinc-950/90 border border-zinc-800 hover:border-zinc-700 rounded-xl overflow-hidden transition-all shadow-xl hover:shadow-red-500/5">
       {/* Top Banner / Image (if present) */}
       {event.imageUrl && (
-        <div className="relative w-full h-44 sm:h-52 overflow-hidden bg-black border-b border-zinc-800">
+        <div
+          onClick={() =>
+            setLightboxData({
+              src: event.imageUrl!,
+              alt: event.title,
+              caption: event.synopsis || event.title,
+              figureLabel: 'VISUAL INTEL // BANNER',
+            })
+          }
+          className="relative w-full h-44 sm:h-52 overflow-hidden bg-black border-b border-zinc-800 cursor-pointer group/banner"
+          title="Click to Enlarge Visual"
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={event.imageUrl}
             alt={event.title}
-            className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500 ease-out opacity-90 group-hover:opacity-100"
+            className="w-full h-full object-cover group-hover/banner:scale-105 transition-transform duration-500 ease-out opacity-90 group-hover/banner:opacity-100"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/30 to-transparent" />
           <div className="absolute top-2.5 left-3 px-2 py-0.5 bg-black/80 border border-zinc-700/80 rounded text-[10px] hud-mono text-zinc-300">
             VISUAL INTEL // LOG
+          </div>
+          <div className="absolute bottom-2.5 right-3 px-2 py-0.5 rounded bg-black/80 border border-zinc-700 text-zinc-300 text-[9px] hud-mono flex items-center gap-1 opacity-0 group-hover/banner:opacity-100 transition-opacity">
+            <ZoomIn className="w-3 h-3 text-red-400" />
+            <span>ENLARGE</span>
           </div>
         </div>
       )}
@@ -55,12 +78,18 @@ export default function EventCard({ event, onDelete }: EventCardProps) {
               <span>{formattedDate}</span>
             </span>
 
-            {/* Location / Sector */}
-            {event.location && (
+            {/* Location / Sector (Defaults to [UNKNOWN]) */}
+            {event.location ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs hud-mono">
                 <MapPin className="w-3 h-3 text-emerald-400" />
                 <span className="text-zinc-500">SECTOR //</span>
                 <span className="font-medium text-zinc-200">{event.location.name}</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-900/60 border border-zinc-800 text-zinc-400 text-xs hud-mono">
+                <MapPin className="w-3 h-3 text-zinc-600" />
+                <span className="text-zinc-600">SECTOR //</span>
+                <span className="font-mono text-zinc-400">[UNKNOWN]</span>
               </span>
             )}
           </div>
@@ -96,11 +125,11 @@ export default function EventCard({ event, onDelete }: EventCardProps) {
           <Link href={`/events/${event.id}`}>{event.title}</Link>
         </h2>
 
-        {/* Affiliated Factions */}
-        {event.factions && event.factions.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] hud-mono uppercase tracking-wider text-zinc-500">FACTIONS //</span>
-            {event.factions.map((faction) => (
+        {/* Affiliated Factions (Defaults to [UNKNOWN]) */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] hud-mono uppercase tracking-wider text-zinc-500">FACTIONS //</span>
+          {event.factions && event.factions.length > 0 ? (
+            event.factions.map((faction) => (
               <span
                 key={faction.id}
                 className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono bg-zinc-900 border border-zinc-800 text-zinc-300"
@@ -111,9 +140,14 @@ export default function EventCard({ event, onDelete }: EventCardProps) {
                 />
                 <span>{faction.name}</span>
               </span>
-            ))}
-          </div>
-        )}
+            ))
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono bg-zinc-900 border border-zinc-800/80 text-zinc-500">
+              <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
+              <span>[UNKNOWN]</span>
+            </span>
+          )}
+        </div>
 
         {/* Synopsis Briefing Box */}
         {event.synopsis ? (
@@ -215,6 +249,17 @@ export default function EventCard({ event, onDelete }: EventCardProps) {
           </Link>
         </div>
       </div>
+
+      {/* Image Lightbox Modal */}
+      {lightboxData && (
+        <ImageLightboxModal
+          src={lightboxData.src}
+          alt={lightboxData.alt}
+          caption={lightboxData.caption}
+          figureLabel={lightboxData.figureLabel}
+          onClose={() => setLightboxData(null)}
+        />
+      )}
     </article>
   );
 }

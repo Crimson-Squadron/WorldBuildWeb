@@ -63,13 +63,13 @@ export default function FactionsPage() {
         </Link>
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-400 hud-mono mb-1">
           <Shield className="w-3.5 h-3.5" />
-          <span>ALLIANCE & FACTION MATRIX</span>
+          <span>ALLIANCE & ORGANIZATION REGISTRY</span>
         </div>
         <h1 className="text-3xl font-extrabold text-white tracking-tight">
-          Factions & Sovereign Orders
+          Organizations & Sovereign Orders
         </h1>
         <p className="text-xs sm:text-sm text-zinc-400 mt-1 hud-mono">
-          Strategic directory of sovereign empires, guilds, and combat divisions recorded across world history.
+          Strategic directory of sovereign empires, guilds, corporate conglomerates, and combat divisions recorded across world history.
         </p>
       </div>
 
@@ -82,7 +82,7 @@ export default function FactionsPage() {
           >
             <h2 className="text-xs font-bold uppercase tracking-wider hud-mono text-zinc-200 flex items-center gap-2 border-b border-zinc-800 pb-2">
               <Plus className="w-4 h-4 text-red-500" />
-              <span>COMMISSION NEW FACTION</span>
+              <span>REGISTER NEW ORGANIZATION</span>
             </h2>
 
             <div>

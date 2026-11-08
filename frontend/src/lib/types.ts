@@ -19,6 +19,7 @@ export interface Chapter {
   orderIndex: number;
   chapterTitle: string;
   imageUrl?: string;
+  imageCaption?: string;
   content: string;
 }
 
@@ -46,6 +47,7 @@ export interface CreateEventInput {
     orderIndex: number;
     chapterTitle: string;
     imageUrl?: string;
+    imageCaption?: string;
     content: string;
   }[];
 }
